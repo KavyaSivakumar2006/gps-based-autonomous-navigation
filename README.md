@@ -111,7 +111,7 @@ sudo apt install ros-$ROS_DISTRO-tf2-geometry-msgs
 
     Differential drive mobile robot (configured in URDF)
 
-## Build Instructions
+### Build Instructions
 
 cd ~/ROS_WS
 colcon build
