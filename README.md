@@ -199,3 +199,11 @@ ros2 run nav2_map_server map_saver_cli -f ~/maps/my_map
 ## License
 
 Apache-2.0
+
+## Motor Control (micro-ROS)
+
+Low-level motor control is handled by an ESP32 microcontroller using micro-ROS.
+The ESP32 subscribes to `/cmd_vel` messages published by Nav2 and drives the robot motors.
+
+Firmware repository:
+https://github.com/KavyaSivakumar2006/micro-ros-motor-control
