@@ -21,56 +21,6 @@ and motor control are decoupled through topics and actions.
 
 ---
 
-## System Architecture
-
-The system is divided into high-level navigation (ROS 2) and low-level motor control (micro-ROS).
-GPS goals are converted into local map coordinates, planned using Nav2, and executed by an ESP32-based motor controller.
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                GPS-Based Autonomous Navigation System                 │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  Sensors                                                            │
-│  ───────                                                            │
-│  ┌──────────────┐        ┌──────────────┐                          │
-│  │     GPS      │        │    LiDAR     │                          │
-│  │ (/fix)       │        │ (/scan)      │                          │
-│  └──────┬───────┘        └──────┬───────┘                          │
-│         │                         │                                │
-│         ▼                         ▼                                │
-│  ┌──────────────────┐     ┌──────────────────┐                   │
-│  │ GPS → Local Node │     │  SLAM Toolbox     │                   │
-│  │ (lat,lon → x,y)  │     │  (Mapping)        │                   │
-│  └──────┬───────────┘     └──────┬───────────┘                   │
-│         │                         │                                │
-│         └──────────────┬──────────┘                                │
-│                        ▼                                           │
-│              ┌──────────────────────┐                              │
-│              │   Localization (TF)  │                              │
-│              │   map → odom → base  │                              │
-│              └─────────┬────────────┘                              │
-│                        ▼                                           │
-│              ┌──────────────────────┐                              │
-│              │      Nav2 Stack      │                              │
-│              │  Planner + Controller│                              │
-│              │  Costmaps            │                              │
-│              └─────────┬────────────┘                              │
-│                        ▼                                           │
-│                     /cmd_vel                                      │
-│                        ▼                                           │
-│  ┌─────────────────────────────────────────────────────────────┐  │
-│  │                micro-ROS (ESP32)                             │  │
-│  │  - Subscribes to /cmd_vel                                    │  │
-│  │  - Converts velocity to PWM                                  │  │
-│  │  - Real-time motor control                                   │  │
-│  └───────────────┬─────────────────────────────────────────────┘  │
-│                  ▼                                                  │
-│              Motor Driver → Motors                                  │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-
----
-
 ## Features
 - GPS to local coordinate conversion (latitude/longitude → map frame)
 - Interactive GPS goal sender via terminal
@@ -79,6 +29,66 @@ GPS goals are converted into local map coordinates, planned using Nav2, and exec
 - LiDAR support (RPLidar A1 M8 via `sllidar_ros2`)
 - RViz visualization support
 
+---
+## System Architecture
+
+The system is designed as a layered ROS 2 + micro-ROS architecture, where
+high-level navigation runs on a Linux system and low-level motor control runs
+on an ESP32 microcontroller.
+
+### 1. Sensor Layer
+
+GPS (/fix)           LiDAR (/scan)
+   │                    │
+   ▼                    ▼
+
+## 2. Perception & Mapping
+
++-----------------------+
+|   SLAM Toolbox        |
+|   - Builds map        |
+|   - Publishes /map    |
++-----------------------+
+
+## 3. GPS Processing
+
++-----------------------------+
+| GPS → Local Converter Node  |
+| - lat/lon → map frame (x,y) |
+| - Publishes goal_pose       |
++-----------------------------+
+
+## 4. Localization & TF
+
+map → odom → base_link
+
+## 5. Navigation (Nav2)
+
++------------------------------+
+| Nav2 Stack                   |
+| - Global planner             |
+| - Local controller           |
+| - Costmaps                   |
++------------------------------+
+            |
+         /cmd_vel
+
+## 6. Motor Control (micro-ROS)
+
++------------------------------+
+| micro-ROS Agent              |
+| (Linux / SBC)                |
++------------------------------+
+            |
+            ▼
++------------------------------+
+| ESP32 (micro-ROS client)     |
+| - Subscribes to /cmd_vel     |
+| - Converts to PWM            |
++------------------------------+
+            |
+            ▼
+        Motors
 ---
 
 ## Prerequisites
