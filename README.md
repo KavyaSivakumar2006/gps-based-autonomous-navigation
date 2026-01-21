@@ -27,7 +27,12 @@ This separation ensures **modularity, reliability, and scalability**.
 
 ## System Architecture
 
-The navigation pipeline is executed in **clearly defined stages**, from sensing to actuation.
+The overall system architecture of the GPS-based autonomous navigation stack
+is shown below. The system integrates GPS, LiDAR-based SLAM, Nav2 planning,
+and micro-ROS motor control on ESP32.
+
+![System Architecture](images/system_architecture.png)
+
 
 ### 1. Sensor Layer
 
@@ -129,7 +134,7 @@ sudo apt install ros-humble-slam-toolbox
 
 ---
 
-## Build Instructions
+### Build Instructions
 
 ```bash
 cd ~/ROS_WS
@@ -219,13 +224,12 @@ Converted goals are sent to Nav2 as map-frame goals
 
 ## TF Tree
 
-map
- └── odom
-      └── base_footprint
-           └── base_link
-                └── laser_frame
+The TF tree shows the relationship between map, odom, base_link, and sensor frames.
+
+![TF Tree](images/tf_tree.png)
 
 ---
+
 ## Key Topics
 
 | Topic      | Type                      | Description        |
