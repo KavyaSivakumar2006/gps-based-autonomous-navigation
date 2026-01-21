@@ -1,262 +1,234 @@
-GPS Autonomous Navigation (ROS 2)
+---
 
+# GPS-Based Autonomous Navigation (ROS 2)
 
+![ROS 2](https://img.shields.io/badge/ROS2-Humble-blue)
+![Nav2](https://img.shields.io/badge/Nav2-Navigation-green)
+![micro-ROS](https://img.shields.io/badge/micro--ROS-ESP32-orange)
+![License](https://img.shields.io/badge/License-Apache--2.0-lightgrey)
 
+A ROS 2–based autonomous navigation system that uses **GPS goals**, **LiDAR-based SLAM**, and the **Nav2 stack**, with **ESP32 motor control via micro-ROS**.
 
+---
 
+## Overview
 
+This project implements a **GPS-driven autonomous navigation pipeline** in ROS 2.
+The robot accepts GPS coordinates (latitude, longitude), converts them into **local map-frame goals**, and navigates autonomously while avoiding obstacles.
 
+The system is designed using a **layered architecture**, separating:
 
-A ROS 2 package for GPS-based autonomous navigation using LiDAR, SLAM Toolbox, and the Nav2 stack, with low-level motor control via micro-ROS on ESP32.
+* High-level navigation and planning (ROS 2)
+* Low-level motor control (micro-ROS on ESP32)
 
-Overview
+This separation ensures **modularity, reliability, and scalability**.
 
-This project implements an autonomous navigation pipeline where GPS coordinates
-(latitude, longitude) are converted into local map-frame goals and executed
-using the ROS 2 Nav2 stack.
+---
 
-The system supports:
+## System Architecture
 
-Real-time SLAM mapping
+The navigation pipeline is executed in **clearly defined stages**, from sensing to actuation.
 
-Obstacle avoidance
+### 1. Sensor Layer
 
-GPS-based goal navigation
+* **GPS** publishes global position (`/fix`)
+* **LiDAR** publishes obstacle data (`/scan`)
 
-Hardware motor control using micro-ROS
+---
 
-The architecture cleanly separates high-level navigation (ROS 2) and
-low-level motor control (ESP32).
+### 2. Mapping & Perception
 
-Key Features
+* **SLAM Toolbox**
 
-GPS → local map coordinate conversion
+  * Builds a real-time occupancy grid
+  * Publishes `/map`
+  * Uses LiDAR data for mapping
 
-Interactive GPS goal sender (terminal-based)
+---
 
-Real-time mapping using SLAM Toolbox
+### 3. GPS Processing
 
-Autonomous navigation using Nav2
+* **GPS → Local Converter Node**
 
-LiDAR integration (RPLidar A1 M8)
+  * Converts latitude & longitude to local `(x, y)`
+  * Uses first GPS point as map origin
+  * Publishes navigation goal (`/goal_pose`)
 
-RViz visualization support
+---
 
-micro-ROS based motor control
+### 4. Localization & TF
 
-System Architecture
+* Maintains the TF chain:
 
-The system follows a layered ROS 2 + micro-ROS design, where navigation runs
-on a Linux system and motor control runs on an ESP32.
+```
+map → odom → base_link
+```
 
-1. Sensor Layer
+* Ensures consistent frame alignment for navigation
 
-GPS
+---
 
-Publishes global position
+### 5. Navigation (Nav2)
 
-Topic: /fix
+* **Global Planner**: Computes collision-free path
+* **Local Controller**: Tracks path and avoids obstacles
+* **Costmaps**: Dynamic + static obstacle handling
+* Publishes velocity commands on `/cmd_vel`
 
-LiDAR (RPLidar A1 M8)
+---
 
-Publishes laser scans
+### 6. Motor Control (micro-ROS)
 
-Topic: /scan
+* **micro-ROS Agent** runs on Linux/SBC
+* **ESP32 micro-ROS client**
 
-2. Perception & Mapping
+  * Subscribes to `/cmd_vel`
+  * Converts velocity commands to PWM
+  * Drives the motors in real time
 
-SLAM Toolbox
+---
 
-Builds a 2D occupancy grid map
+## Features
 
-Performs scan matching
+* GPS to local map-frame conversion
+* Autonomous navigation using Nav2
+* Real-time LiDAR-based SLAM
+* Interactive GPS goal sender
+* RViz visualization
+* micro-ROS–based ESP32 motor control
 
-Publishes the global map
+---
 
-Published Topics
+## Hardware Requirements
 
-/map
+* RPLidar A1 M8 (or compatible)
+* Differential drive mobile robot
+* ESP32 microcontroller
+* Motor driver compatible with PWM
 
-/tf
+---
 
-3. GPS Processing
+## Software Requirements
 
-GPS → Local Converter Node
+* ROS 2 Humble
+* Nav2
+* SLAM Toolbox
+* micro-ROS
+* RViz2
 
-Converts latitude & longitude into local (x, y) map coordinates
+---
 
-Uses the first GPS point as the origin (0, 0)
+## Build Instructions
 
-Publishes navigation goals for Nav2
-
-Published Topic
-
-/goal_pose
-
-4. Localization & TF
-
-Standard ROS 2 TF chain:
-
-map → odom → base_footprint → base_link
-
-
-This ensures Nav2 can correctly plan paths in the map frame.
-
-5. Navigation (Nav2)
-
-Global path planning
-
-Local obstacle avoidance
-
-Costmap generation
-
-Velocity command generation
-
-Subscribed Topics
-
-/map
-
-/odom
-
-/goal_pose
-
-Published Topic
-
-/cmd_vel
-
-6. Motor Control (micro-ROS)
-
-micro-ROS Agent
-
-Runs on Linux / SBC
-
-Bridges ROS 2 and embedded hardware
-
-ESP32 (micro-ROS client)
-
-Subscribes to /cmd_vel
-
-Converts velocity commands into PWM
-
-Drives motor driver hardware
-
-Subscribed Topic
-
-/cmd_vel
-
-Hardware Requirements
-
-RPLidar A1 M8 (or compatible LiDAR)
-
-Differential-drive mobile robot
-
-ESP32 microcontroller (for motor control)
-
-Software Requirements
-
-ROS 2 Humble
-
-Nav2
-
-SLAM Toolbox
-
-RViz2
-
-micro-ROS
-
-Required ROS 2 Packages
-sudo apt update
-sudo apt install ros-$ROS_DISTRO-slam-toolbox
-sudo apt install ros-$ROS_DISTRO-navigation2
-sudo apt install ros-$ROS_DISTRO-nav2-bringup
-sudo apt install ros-$ROS_DISTRO-robot-state-publisher
-sudo apt install ros-$ROS_DISTRO-joint-state-publisher
-sudo apt install ros-$ROS_DISTRO-xacro
-sudo apt install ros-$ROS_DISTRO-tf2-ros
-sudo apt install ros-$ROS_DISTRO-tf2-geometry-msgs
-
-Build Instructions
+```bash
 cd ~/ROS_WS
 colcon build
 source install/setup.bash
+```
 
-Run Order (Important)
+---
 
-Follow this order strictly:
+## Run Order (IMPORTANT)
 
-Start LiDAR driver
+Follow this sequence strictly:
 
-Start SLAM Toolbox (or localization)
+1. Start LiDAR driver
+2. Start SLAM Toolbox
+3. Launch Nav2
+4. Start GPS goal sender
+5. Start micro-ROS agent + ESP32 firmware
 
-Launch Nav2 bringup
+Incorrect order may cause navigation failures.
 
-Start GPS goal sender
+---
 
-Start micro-ROS agent and ESP32 firmware (hardware only)
+## Usage
 
-Incorrect order may cause Nav2 or GPS goals to fail.
+### Full Navigation System
 
-Usage
-Complete Navigation (Recommended)
+```bash
 ros2 launch gps_autonomous_navigation complete_navigation_launch.py
+```
 
+With custom GPS origin:
 
-With custom parameters:
-
+```bash
 ros2 launch gps_autonomous_navigation complete_navigation_launch.py \
-  serial_port:=/dev/ttyUSB0 \
   origin_lat:=12.9716 \
   origin_lon:=77.5946
+```
 
-Without RViz
-ros2 launch gps_autonomous_navigation complete_navigation_launch.py use_rviz:=false
+---
 
-Individual Components (Debugging)
+### Individual Components (Debugging)
+
+```bash
 # Robot description
 ros2 launch gps_autonomous_navigation robot_description_launch.py
 
-# LiDAR only
+# LiDAR
 ros2 launch gps_autonomous_navigation lidar_launch.py
 
-# SLAM only
+# SLAM
 ros2 launch gps_autonomous_navigation slam_toolbox_launch.py
 
-# Nav2 only
+# Nav2
 ros2 launch gps_autonomous_navigation nav2_launch.py
 
-# GPS Goal Sender only
+# GPS Goal Sender
 ros2 launch gps_autonomous_navigation gps_goal_sender_launch.py
+```
 
-GPS Goal Sender Usage
-============================================================
-GPS NAVIGATION GOAL SENDER
-============================================================
+---
 
-<lat> <lon>        - Send GPS goal
-<lat>,<lon>        - Send GPS goal with comma
-origin <lat> <lon> - Set GPS origin
-cancel             - Cancel navigation
-status             - Navigation status
-help               - Show help
-quit / exit        - Exit
+## Sending GPS Goals
 
-Navigation Output
+Once running, the terminal accepts GPS inputs:
 
-The image below shows GPS-based navigation using Nav2 with a SLAM-generated map:
+```
+<latitude> <longitude>
+<latitude>,<longitude>
+origin <latitude> <longitude>
+cancel
+status
+help
+exit
+```
 
-Motor Control (micro-ROS)
+---
 
-Low-level motor control is implemented using ESP32 + micro-ROS.
+## Example Workflow
 
-ESP32 subscribes to /cmd_vel
+```
+> 12.9700 77.5900
+[ORIGIN SET] Local map origin initialized
 
-Converts velocity commands to PWM
+> 12.9716 77.5946
+[GOAL SENT] Robot navigating to GPS goal
+```
 
-Drives motors in real time
+---
 
-👉 Firmware repository
-https://github.com/KavyaSivakumar2006/micro-ros-motor-control
+## Navigation Output
 
-License
+RViz visualization of GPS-based autonomous navigation:
 
-Apache-2.0
+![NavigationNavigation Output](images/output.jpeg)
+
+---
+
+## Motor Control (micro-ROS)
+
+ESP32 firmware subscribes to `/cmd_vel` and drives motors using PWM.
+
+**Firmware repository:**
+[https://github.com/KavyaSivakumar2006/micro-ros-motor-control](https://github.com/KavyaSivakumar2006/micro-ros-motor-control)
+
+---
+
+## License
+
+Apache License 2.0
+
+---
+
