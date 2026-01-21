@@ -1,3 +1,8 @@
+![ROS 2](https://img.shields.io/badge/ROS2-Humble-blue)
+![Nav2](https://img.shields.io/badge/Nav2-Navigation-green)
+![micro-ROS](https://img.shields.io/badge/micro--ROS-ESP32-orange)
+![License](https://img.shields.io/badge/License-Apache--2.0-lightgrey)
+
 # GPS Autonomous Navigation (ROS 2)
 
 A ROS 2 package for GPS-based autonomous navigation using LiDAR, SLAM Toolbox,
@@ -13,6 +18,56 @@ obstacles.
 
 The system follows a modular ROS 2 architecture where navigation, localization,
 and motor control are decoupled through topics and actions.
+
+---
+
+## System Architecture
+
+The system is divided into high-level navigation (ROS 2) and low-level motor control (micro-ROS).
+GPS goals are converted into local map coordinates, planned using Nav2, and executed by an ESP32-based motor controller.
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                GPS-Based Autonomous Navigation System                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Sensors                                                            │
+│  ───────                                                            │
+│  ┌──────────────┐        ┌──────────────┐                          │
+│  │     GPS      │        │    LiDAR     │                          │
+│  │ (/fix)       │        │ (/scan)      │                          │
+│  └──────┬───────┘        └──────┬───────┘                          │
+│         │                         │                                │
+│         ▼                         ▼                                │
+│  ┌──────────────────┐     ┌──────────────────┐                   │
+│  │ GPS → Local Node │     │  SLAM Toolbox     │                   │
+│  │ (lat,lon → x,y)  │     │  (Mapping)        │                   │
+│  └──────┬───────────┘     └──────┬───────────┘                   │
+│         │                         │                                │
+│         └──────────────┬──────────┘                                │
+│                        ▼                                           │
+│              ┌──────────────────────┐                              │
+│              │   Localization (TF)  │                              │
+│              │   map → odom → base  │                              │
+│              └─────────┬────────────┘                              │
+│                        ▼                                           │
+│              ┌──────────────────────┐                              │
+│              │      Nav2 Stack      │                              │
+│              │  Planner + Controller│                              │
+│              │  Costmaps            │                              │
+│              └─────────┬────────────┘                              │
+│                        ▼                                           │
+│                     /cmd_vel                                      │
+│                        ▼                                           │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │                micro-ROS (ESP32)                             │  │
+│  │  - Subscribes to /cmd_vel                                    │  │
+│  │  - Converts velocity to PWM                                  │  │
+│  │  - Real-time motor control                                   │  │
+│  └───────────────┬─────────────────────────────────────────────┘  │
+│                  ▼                                                  │
+│              Motor Driver → Motors                                  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 
 ---
 
@@ -51,6 +106,18 @@ sudo apt install ros-$ROS_DISTRO-tf2-geometry-msgs
 cd ~/ROS_WS
 colcon build
 source install/setup.bash
+
+## Run Order (Important)
+
+Follow this order to run the system correctly:
+
+1. Start LiDAR driver  
+2. Start SLAM Toolbox or localization  
+3. Launch Nav2 bringup  
+4. Start the GPS goal sender  
+5. (If using hardware) Start micro-ROS agent and ESP32 firmware
+
+Incorrect order may cause Nav2 or GPS goals to fail.
 
 ## Usage
 1. Complete Navigation (Recommended)
@@ -196,9 +263,15 @@ Nav2 not accepting goals
 
 ros2 run nav2_map_server map_saver_cli -f ~/maps/my_map
 
-## License
+---
 
-Apache-2.0
+## Navigation Output
+
+The image below shows the robot navigating to a GPS-defined goal using the Nav2 stack.
+The local map is generated using LiDAR-based SLAM, and the planned path is visualized
+in RViz.
+
+![Navigation Output](images/output.jpeg)
 
 ## Motor Control (micro-ROS)
 
@@ -207,3 +280,7 @@ The ESP32 subscribes to `/cmd_vel` messages published by Nav2 and drives the rob
 
 Firmware repository:
 https://github.com/KavyaSivakumar2006/micro-ros-motor-control
+
+## License
+
+Apache-2.0
