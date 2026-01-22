@@ -27,9 +27,8 @@ This separation ensures **modularity, reliability, and scalability**.
 
 ## System Architecture
 
-The overall system architecture of the GPS-based autonomous navigation stack
-is shown below. The system integrates GPS, LiDAR-based SLAM, Nav2 planning,
-and micro-ROS motor control on ESP32.
+The overall system architecture of the GPS-based autonomous navigation stack 
+integrates GPS, LiDAR-based SLAM, Nav2 planning and micro-ROS motor control (cmd vel ) on ESP32.
 
 ![System Architecture](images/system_architecture.png)
 
