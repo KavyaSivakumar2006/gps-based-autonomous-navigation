@@ -266,7 +266,7 @@ RViz visualization of GPS-based autonomous navigation:
 ESP32 firmware subscribes to `/cmd_vel` and drives motors using PWM.
 
 **Firmware repository:**
-[https://github.com/KavyaSivakumar2006/micro-ros-motor-control](https://github.com/KavyaSivakumar2006/micro-ros-motor-control)
+(https://github.com/KavyaSivakumar2006/micro-ros-motor-control)
 
 ---
 
