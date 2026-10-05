@@ -230,7 +230,7 @@ The TF tree shows the relationship between map, odom, base_link, and sensor fram
 ---
 
 ## Key Topics
-
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 | Topic      | Type                      | Description        |
 | ---------- | ------------------------- | ------------------ |
 | /scan      | sensor_msgs/LaserScan     | LiDAR data         |
@@ -238,7 +238,7 @@ The TF tree shows the relationship between map, odom, base_link, and sensor fram
 | /cmd_vel   | geometry_msgs/Twist       | Velocity commands  |
 | /goal_pose | geometry_msgs/PoseStamped | Navigation goal    |
 | /odom      | nav_msgs/Odometry         | Robot odometry     |
-
+ - - - - -  - - - - - - - - - - - - - - - - - - - -- - - - - - 
 ---
 
 ## Example Workflow
